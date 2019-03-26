@@ -1,0 +1,37 @@
+Installing helm on ubuntu:
+sudo snap install helm --classic
+helm init --upgrade
+
+Connect to your K8S cluster:
+kubectl cluster-info
+or kubectl config current-context
+=> Check that kubectl is configured to your cluster
+
+then do helm init again
+
+To check it works:
+helm help
+
+# Deploy a chart to your cluster
+helm repo update
+helm install stable/mysql
+# Then see it is deployed with:
+helm list
+# And remove it with
+helm delete invisible-ragdoll
+
+# Deploy default nginx with ingress
+helm install stable/nginx-ingress --set rbac.create=false --set rbac.createRole=false --set rbac.createClusterRole=false
+# In case of RBAC issues, look at: https://github.com/Azure/AKS/issues/370
+helm list
+helm delete <release-name>
+
+# or from local chart directory
+helm install ./nginx-ingress --name=sweagle-test
+helm delete sweagle-test
+# to delete all history about release
+helm del --purge sweagle-test;
+
+
+# From Gitlab
+helm upgrade --install --wait --set service.enabled=true --set releaseOverride=production --set image.repository=registry.gitlab.com/sweagle/webportal1/master --set image.tag=942b165b316b358c2db0d0bcd668e54c89d9cb5f --set image.pullPolicy=Always --set imagePullSecrets[0].name=gitlab-registry --set application.track=stable --set application.database_url= --set service.url=http://sweagle-webportal1.35.233.58.136.nip.io --set replicaCount=1 --namespace=webportal1-9373289 production chart/

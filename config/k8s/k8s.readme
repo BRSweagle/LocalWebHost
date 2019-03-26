@@ -1,0 +1,32 @@
+# Push to your GKE cluster
+# First, get authentication
+gcloud container clusters get-credentials dimitris-sweagle-gke --zone europe-west1-d
+kubectl delete deployment sweagle-playground-web
+kubectl run sweagle-playground-web --image=registry.gitlab.com/sweagle/webportal1/sweagle.playground.web --port 80
+# OR
+kubectl run sweagle-playground-web --image=gcr.io/${PROJECT_ID}/sweagle.playground.web --port 80
+# for this, you need
+#- either to create a key service account in json format to authenticate (in gcp/menu API & Services/menu credentials/New service account)
+#- or make your gcr.io registry public (in gcp/menu Containers registry/Parameters/ Set access to Public)
+
+#kubectl get pods
+example: kubectl get pods --all-namespaces
+example: kubectl describe pods production-7b975748b8-26f62 --namespace=webportal1-9373289
+
+# in case of issues
+kubectl describe pods sweagle-playground-web
+kubectl delete deployment sweagle-playground-web
+
+# Expose it
+#kubectl expose deployment sweagle-playground-web --type=LoadBalancer --port 80 --target-port 80
+# In case of issue:
+kubectl delete service sweagle-playground-web
+
+
+#kubectl get deployments
+kubectl get deployments --all-namespaces
+kubectl get deployment <deployment-name> --namespace=webportal1-k8s -o=yaml
+
+#kubectl get services
+kubectl get services --all-namespaces
+kubectl get service <service-name> --namespace=webportal1-k8s -o=yaml

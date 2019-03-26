@@ -1,0 +1,28 @@
+{
+  "type": "object",
+  "required": false,
+  "properties": {
+      "username": {
+          "type": "string",
+          "required": false,
+          "properties": {}
+      },
+      "email": {
+          "type": "string",
+          "required": false,
+          "pattern": {},
+          "properties": {}
+      },
+      "gadget": {
+          "readonly": false,
+          "required": false,
+          "disallow": [],
+          "enum": [
+              "Armored Car",
+              "Explosive Pen",
+              "Laser Watch"
+          ],
+          "properties": {}
+      }
+    }
+}

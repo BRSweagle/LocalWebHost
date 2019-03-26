@@ -1,0 +1,46 @@
+# to build this image, Launch
+# -t is to give a name to your Image
+# . is the directory where is located the Dockerfile
+# Build Locally
+sudo docker build -t sweagle.playground.web .
+
+# Now, you can test your Docker image locally with:
+# sudo docker run -it nginx bash
+# service nginx status
+# nginx -T
+# curl http://locahost:3000
+
+# Or
+#sudo docker run -d -p 3000:80 sweagle.playground.web
+#curl http://localhost:3000
+
+# to see it is running
+sudo docker container ls
+# to stop one
+sudo docker container stop <name>
+
+# to see list of docker images
+sudo docker images
+or sudo docker image ls
+
+# to delete an image
+sudo docker image rm -f <ID>
+or sudo docker rmi -f <ID>
+
+# Pull from gitlab to local repository
+sudo docker login registry.gitlab.com
+sudo docker pull registry.gitlab.com/sweagle/webportal1/master:ea2ac1875318f926c865f9cdcdd4eba89d8dc850
+sudo docker run -d -p 3000:80 registry.gitlab.com/sweagle/webportal1/master:ea2ac1875318f926c865f9cdcdd4eba89d8dc850
+
+# Build and push to GitLab registry
+sudo docker login registry.gitlab.com
+sudo docker build -t registry.gitlab.com/sweagle/webportal1/sweagle.playground.web .
+sudo docker push registry.gitlab.com/sweagle/webportal1/sweagle.playground.web
+# OR
+# push to GKE registry
+export PROJECT_ID="$(gcloud config get-value project -q)"
+sudo docker build -t gcr.io/${PROJECT_ID}/sweagle.playground.web .
+sudo gcloud auth configure-docker
+sudo docker push gcr.io/${PROJECT_ID}/sweagle.playground.web
+
+See k8s.readme for more instruction to push image to GKE

@@ -1,0 +1,179 @@
+stages:
+  - build
+  - uploadConfig
+  - TST_checkConfig
+  - TST_deploy
+  - TST_afterDeploy
+  - PRD_checkConfig
+  - PRD_deploy
+
+variables:
+  SWEAGLE_SCRIPTS_DIR: "./scripts"
+  CONFIG_DIR: "./config"
+  WWW_SOURCE_DIR: "./public/*"
+  WWW_TARGET_DIR: "/var/www/webPortal1"
+  DOCKER_DRIVER: overlay2
+#build:
+#  stage: build
+#  before_script: []
+#  script:
+#    - echo build
+#  after_script: []
+
+
+uploadConfiguration:
+  image: node:6
+  stage: uploadConfig
+  only:
+  - master
+  variables:
+    ENV_NAME: "TST1"
+  before_script:
+    # Install package to transform CSS to JSON
+    - echo install NPM package
+    - npm install -g cssjson-cli
+  script:
+    - chmod +x $SWEAGLE_SCRIPTS_DIR/*.sh
+    - echo send configuration to Sweagle
+    - $SWEAGLE_SCRIPTS_DIR/webPortalUploadConfigBefore.sh $ENV_NAME
+    - echo configuration sent
+  when: manual
+  # possible values always, on_success, on_failure, manual
+
+
+TST_checkConfig:
+  stage: TST_checkConfig
+  only:
+  - master
+  variables:
+    ENV_NAME: "TST1"
+    SWEAGLE_MDS: "WEBPORTAL1_$ENV_NAME"
+    SWEAGLE_VALIDATORS: "colorValidator sameListValidator"
+  before_script:
+    - echo check configuration from Sweagle
+    - chmod +x $SWEAGLE_SCRIPTS_DIR/*.sh
+    #- $SWEAGLE_SCRIPTS_DIR/webPortalCheckColor.sh $SWEAGLE_MDS
+    - $SWEAGLE_SCRIPTS_DIR/checkAllConfigByMdsValidator.sh $SWEAGLE_MDS $SWEAGLE_VALIDATORS
+  script:
+    - echo Ready to deploy TEST environment
+  when: manual
+  # possible values always, on_success, on_failure, manual
+
+
+#This is only when deploying to GitLab WebSite
+#pages:
+#  image: alpine:latest
+#  stage: TST_deploy
+#  only:
+#  - master
+#  script:
+#  - echo 'Deploy website...'
+#  artifacts:
+#    paths:
+#    - public
+#  when: manual
+
+TST_deploy:
+  stage: TST_deploy
+  only:
+  - master
+  variables:
+    ENV_NAME: "TST1"
+  before_script:
+    ## Install ssh-agent if not already installed, it is required by Docker.
+    ## (change apt-get to yum if you use an RPM-based image)
+    - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
+    ## Run ssh-agent (inside the build environment)
+    - eval $(ssh-agent -s)
+    ## Add the SSH key stored in SSH_PRIVATE_KEY variable to the agent store
+    - echo "$PLAYGROUND_SSH_TOKEN" | tr -d '\r' | ssh-add - > /dev/null
+    ## Create the SSH directory and give it the right permissions
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+
+    # Add the list of known servers
+    - echo "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+    ##
+     ## Alternatively, use ssh-keyscan to scan the keys of your private server.
+     ## Replace example.com with your private server's domain name. Repeat that
+     ## command if you have more than one server to connect to.
+     ##
+     #- ssh-keyscan example.com >> ~/.ssh/known_hosts
+     #- chmod 644 ~/.ssh/known_hosts
+
+     ##
+     ## You can optionally disable host key checking. Be aware that by adding that
+     ## you are susceptible to man-in-the-middle attacks.
+     ## WARNING: Use this only with the Docker executor, if you use it with shell
+     ## you will overwrite your user's SSH config.
+     ##
+     #- '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
+  script:
+    - echo 'Deploy to $ENV_NAME'
+    - scp -r $WWW_SOURCE_DIR playground_www@playground.sweagle.expert:$WWW_TARGET_DIR
+  when: manual
+
+TST_afterDeploy:
+  stage: TST_afterDeploy
+  only:
+  - master
+  variables:
+    ENV_NAME: "TST1"
+  script:
+    - echo Upload latest deployed configuration to SWEAGLE
+    - chmod +x $SWEAGLE_SCRIPTS_DIR/*.sh
+    - $SWEAGLE_SCRIPTS_DIR/webPortalUploadConfigAfter.sh $ENV_NAME
+    - echo Configuration sent
+  when: manual
+  # possible values always, on_success, on_failure, manual
+
+#staging:
+#  stage: staging
+#  only:
+#    - release
+#  before_script: [Use Sweagle again]
+#  script:
+#    - echo deploy to staging
+
+PRD_checkConfig:
+  image: alpine:latest
+  stage: PRD_checkConfig
+  only:
+  - master
+  variables:
+    ENV_NAME: "PRD"
+    SWEAGLE_MDS: "WEBPORTAL1_$ENV_NAME"
+    SWEAGLE_VALIDATORS: "colorValidator noDevValues sameListValidator"
+  before_script:
+  - echo check configuration from Sweagle
+  - chmod +x $SWEAGLE_SCRIPTS_DIR/*.sh
+  - $SWEAGLE_SCRIPTS_DIR/checkAllConfigByMdsValidator.sh $SWEAGLE_MDS $SWEAGLE_VALIDATORS'
+  script:
+    - echo 'Check config for production'
+  when: manual
+
+PRD_deploy:
+  stage: PRD_deploy
+  only:
+  - master
+  variables:
+    ENV_NAME: "PRD"
+  before_script:
+    ## Install ssh-agent if not already installed, it is required by Docker.
+    ## (change apt-get to yum if you use an RPM-based image)
+    - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
+    ## Run ssh-agent (inside the build environment)
+    - eval $(ssh-agent -s)
+    ## Add the SSH key stored in SSH_PRIVATE_KEY variable to the agent store
+    - echo "$PLAYGROUND_SSH_TOKEN" | tr -d '\r' | ssh-add - > /dev/null
+    ## Create the SSH directory and give it the right permissions
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    # Add the list of known servers
+    - echo "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+  script:
+    - echo 'Deploy to $ENV_NAME'
+    - scp -r $WWW_SOURCE_DIR playground_www@playground.sweagle.expert:$WWW_TARGET_DIR
+  when: manual

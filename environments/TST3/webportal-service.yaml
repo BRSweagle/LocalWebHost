@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: 2018-12-21T13:43:23Z
+  labels:
+    app: production
+    chart: auto-deploy-app-0.2.6
+    heritage: Tiller
+    release: production
+  name: production-auto-deploy
+  namespace: webportal1-9373289
+  resourceVersion: "554786"
+  selfLink: /api/v1/namespaces/webportal1-9373289/services/production-auto-deploy
+  uid: 627ad01b-0526-11e9-93ee-42010a84002b
+spec:
+  clusterIP: 10.43.242.72
+  ports:
+  - name: web
+    port: 80
+    protocol: TCP
+    targetPort: 80
+  selector:
+    app: production
+    tier: web
+  sessionAffinity: None
+  type: ClusterIP
+status:
+  loadBalancer: {}

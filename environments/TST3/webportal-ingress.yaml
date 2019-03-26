@@ -1,0 +1,31 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    kubernetes.io/tls-acme: "true"
+  creationTimestamp: 2018-12-21T13:43:23Z
+  generation: 3
+  labels:
+    app: production
+    chart: auto-deploy-app-0.2.6
+    heritage: Tiller
+    release: production
+  name: production-auto-deploy
+  namespace: webportal1-9373289
+  resourceVersion: "562832"
+  selfLink: /apis/extensions/v1beta1/namespaces/webportal1-9373289/ingresses/production-auto-deploy
+  uid: 62a8535a-0526-11e9-93ee-42010a84002b
+spec:
+  rules:
+  - host: sweagle-webportal1.35.233.58.136.nip.io
+    http:
+      paths:
+      - backend:
+          serviceName: production-auto-deploy
+          servicePort: 80
+        path: /
+status:
+  loadBalancer:
+    ingress:
+    - ip: 23.251.132.52

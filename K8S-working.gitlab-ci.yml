@@ -1,0 +1,634 @@
+image: alpine:latest
+
+stages:
+  - build
+  - check
+  - deploy
+  - test
+
+variables:
+  # CI/CD VARIABLES
+  #PERFORMANCE_DISABLED: "true"
+  #TEST_DISABLED: "true"
+  DOCKER_DRIVER: overlay2
+
+  # APPLICATION VARIABLES
+  APP_NAME: "WEBPORTAL1"
+  ENV_NAME: "TST1"
+
+  # DOCKER/ KUBERNETES VARIABLES
+  KUBERNETES_VERSION: 1.10.9
+  HELM_VERSION: 2.11.0
+  CHART_NAME: nginx-ingress
+  KUBE_NAMESPACE: $APP_NAME-$ENV_NAME
+
+  # SWEAGLE VARIABLES
+  CONFIG_DIR: "./config"
+  SWEAGLE_SCRIPTS_DIR: "./scripts"
+  SWEAGLE_PATH: "<PATH IN DATA MODEL WHERE YOU WANT TO PUT YOUR CONFIG DATA>"
+  SWEAGLE_MDS: $APP_NAME"_"$ENV_NAME
+  SWEAGLE_VALIDATORS: "colorValidator sameListValidator"
+  SWEAGLE_EXPORTER: "<EXPORTER USED TO RETRIEVE YOUR CONFIG>"
+  SWEAGLE_EXPORTER_ARGS: "<OPTIONAL, EXPORTER ARGUMENTS IF ANY, SEPARATED BY COMMA>"
+  SWEAGLE_EXPORTER_FORMAT: "<OPTIONAL, FORMAT USED FOR DOWNLOADED CONFIG, PROPS (DEFAULT), YAML, JSON, XML>"
+  SWEAGLE_EXPORTER_OUTPUT: "<OPTIONAL, TARGET FILE TO EXPORT CONFIG DATA TO, DEFAULT OUTPUT IS SCREEN>"
+
+
+code_quality:
+  # Define the mode used for tasks, possible values always, on_success, on_failure, manual
+  when: manual
+  stage: build
+  image: docker:stable
+  allow_failure: true
+  only:
+    - master
+  services:
+    - docker:stable-dind
+  script:
+    - setup_docker
+    - code_quality
+  artifacts:
+    paths: [gl-code-quality-report.json]
+  except:
+    variables:
+      - $CODE_QUALITY_DISABLED
+
+
+build:
+  when: manual
+  stage: build
+  image: docker:stable-git
+  only:
+    - master
+  services:
+  - docker:stable-dind
+  script:
+    - setup_docker
+    - build
+
+
+container_scanning:
+  when: manual
+  stage: check
+  image: docker:stable
+  allow_failure: true
+  services:
+    - docker:stable-dind
+  script:
+    - setup_docker
+    - container_scanning
+  artifacts:
+    paths: [gl-container-scanning-report.json]
+
+
+dependency_scanning:
+  when: manual
+  stage: check
+  image: docker:stable
+  allow_failure: true
+  services:
+    - docker:stable-dind
+  script:
+    - setup_docker
+    - dependency_scanning
+  artifacts:
+    paths: [gl-dependency-scanning-report.json]
+  except:
+    variables:
+      - $DEPENDENCY_SCANNING_DISABLED
+
+
+license_management:
+  when: manual
+  stage: check
+  image:
+    name: "registry.gitlab.com/gitlab-org/security-products/license-management:$CI_SERVER_VERSION_MAJOR-$CI_SERVER_VERSION_MINOR-stable"
+    entrypoint: [""]
+  allow_failure: true
+  script:
+    - license_management
+  artifacts:
+    paths: [gl-license-management-report.json]
+  except:
+    variables:
+      - $LICENSE_MANAGEMENT_DISABLED
+
+
+static_security_check:
+  when: manual
+  stage: check
+  image: docker:stable
+  allow_failure: true
+  services:
+    - docker:stable-dind
+  script:
+    - setup_docker
+    - sast
+  artifacts:
+    reports:
+      sast: gl-sast-report.json
+  except:
+    variables:
+      - $SAST_DISABLED
+
+
+configuration_check:
+  when: manual
+  stage: check
+  image: node:6
+#  allow_failure: false
+  only:
+    - master
+  before_script:
+    # Install package to transform CSS to JSON
+    - echo **********
+    - echo install NPM package
+    - npm install -g cssjson-cli
+    - echo **********
+    - echo *** Send configuration to Sweagle
+    - chmod +x $SWEAGLE_SCRIPTS_DIR/*.sh
+    - echo send configuration to Sweagle
+    - $SWEAGLE_SCRIPTS_DIR/webPortalUploadConfigBefore.sh $ENV_NAME
+    - echo configuration sent
+  script:
+    - echo **********
+    - echo *** Check configuration from Sweagle
+    - chmod +x $SWEAGLE_SCRIPTS_DIR/*.sh
+    #- $SWEAGLE_SCRIPTS_DIR/webPortalCheckColor.sh $SWEAGLE_MDS
+    - $SWEAGLE_SCRIPTS_DIR/checkAllConfigByMdsValidator.sh $SWEAGLE_MDS $SWEAGLE_VALIDATORS
+
+test:
+  when: manual
+  stage: test
+  script:
+    - echo **********
+    - echo *** Launch automatic test
+  except:
+    variables:
+      - $TEST_DISABLED
+
+
+performance:
+  when: manual
+  stage: test
+  image: docker:stable
+  allow_failure: true
+  services:
+    - docker:stable-dind
+  script:
+    - setup_docker
+    - performance
+  artifacts:
+    paths:
+    - performance.json
+    - sitespeed-results/
+  except:
+    variables:
+      - $PERFORMANCE_DISABLED
+
+
+deploy_to_kubernetes:
+  when: manual
+  stage: deploy
+  only:
+    refs:
+      - master
+    kubernetes: active
+  variables:
+    # specific variables for this step
+    TST1_REPLICAS: 2
+  before_script:
+  script:
+    - echo **********
+    - echo *** Deploy to GKE cluster
+    - check_kube_domain
+    - install_dependencies
+    - download_chart
+    - ensure_namespace
+    - initialize_tiller
+    - create_secret
+    - deploy
+    - delete canary
+    - delete rollout
+    - persist_environment_url
+  environment:
+    name: tst1
+    url: http://$CI_PROJECT_PATH_SLUG.$AUTO_DEVOPS_DOMAIN
+  artifacts:
+    paths: [environment_url.txt]
+
+
+.cd_functions: &cd_functions |
+  # Auto DevOps variables and functions
+  export CI_APPLICATION_REPOSITORY=$CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG
+  export CI_APPLICATION_TAG=$CI_COMMIT_SHA
+  export CI_CONTAINER_NAME=ci_job_build_${CI_JOB_ID}
+  # Transform variables to lowercase for Kubernetes compatibility
+  export APP_NAME=$(echo "$APP_NAME" | tr '[:upper:]' '[:lower:]')
+  export KUBE_NAMESPACE=$(echo "$KUBE_NAMESPACE" | tr '[:upper:]' '[:lower:]')
+  export TILLER_NAMESPACE=$KUBE_NAMESPACE
+  # Extract "MAJOR.MINOR" from CI_SERVER_VERSION and generate "MAJOR-MINOR-stable" for Security Products
+  export SP_VERSION=$(echo "$CI_SERVER_VERSION" | sed 's/^\([0-9]*\)\.\([0-9]*\).*/\1-\2-stable/')
+
+  ######################################################################
+  ######################################################################
+  ########      BUILD FUNCTIONS
+  ######################################################################
+  ######################################################################
+  function registry_login() {
+    if [[ -n "$CI_REGISTRY_USER" ]]; then
+      echo "Logging to GitLab Container Registry with CI credentials..."
+      docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
+      echo ""
+    fi
+  }
+
+  function setup_docker() {
+    if ! docker info &>/dev/null; then
+      if [ -z "$DOCKER_HOST" -a "$KUBERNETES_PORT" ]; then
+        export DOCKER_HOST='tcp://localhost:2375'
+      fi
+    fi
+  }
+
+  function build() {
+    registry_login
+
+    if [[ -f Dockerfile ]]; then
+      echo "Building Dockerfile-based application..."
+      docker build \
+        --build-arg HTTP_PROXY="$HTTP_PROXY" \
+        --build-arg http_proxy="$http_proxy" \
+        --build-arg HTTPS_PROXY="$HTTPS_PROXY" \
+        --build-arg https_proxy="$https_proxy" \
+        --build-arg FTP_PROXY="$FTP_PROXY" \
+        --build-arg ftp_proxy="$ftp_proxy" \
+        --build-arg NO_PROXY="$NO_PROXY" \
+        --build-arg no_proxy="$no_proxy" \
+        -t "$CI_APPLICATION_REPOSITORY:$CI_APPLICATION_TAG" .
+
+      echo "Pushing to GitLab Container Registry..."
+      docker push "$CI_APPLICATION_REPOSITORY:$CI_APPLICATION_TAG"
+      echo ""
+    else
+      echo "No Dockerfile found for build"
+      exit 1
+    fi
+  }
+
+  ######################################################################
+  ######################################################################
+  ########      CHECK FUNCTIONS
+  ######################################################################
+  ######################################################################
+  function container_scanning() {
+    registry_login
+
+    docker run -d --name db arminc/clair-db:latest
+    docker run -p 6060:6060 --link db:postgres -d --name clair --restart on-failure arminc/clair-local-scan:v2.0.1
+    apk add -U wget ca-certificates
+    docker pull ${CI_APPLICATION_REPOSITORY}:${CI_APPLICATION_TAG}
+    wget https://github.com/arminc/clair-scanner/releases/download/v8/clair-scanner_linux_amd64
+    mv clair-scanner_linux_amd64 clair-scanner
+    chmod +x clair-scanner
+    touch clair-whitelist.yml
+    retries=0
+    echo "Waiting for clair daemon to start"
+    while( ! wget -T 10 -q -O /dev/null http://docker:6060/v1/namespaces ) ; do sleep 1 ; echo -n "." ; if [ $retries -eq 10 ] ; then echo " Timeout, aborting." ; exit 1 ; fi ; retries=$(($retries+1)) ; done
+    ./clair-scanner -c http://docker:6060 --ip $(hostname -i) -r gl-container-scanning-report.json -l clair.log -w clair-whitelist.yml ${CI_APPLICATION_REPOSITORY}:${CI_APPLICATION_TAG} || true
+  }
+
+  function code_quality() {
+    docker run --env SOURCE_CODE="$PWD" \
+               --volume "$PWD":/public \
+               --volume /var/run/docker.sock:/var/run/docker.sock \
+               "registry.gitlab.com/gitlab-org/security-products/codequality:$SP_VERSION" /public
+  }
+
+  function license_management() {
+    /run.sh analyze .
+  }
+
+  function dependency_scanning() {
+    case "$CI_SERVER_VERSION" in
+      *-ee)
+        docker run --env DEP_SCAN_DISABLE_REMOTE_CHECKS="${DEP_SCAN_DISABLE_REMOTE_CHECKS:-false}" \
+                   --volume "$PWD:/code" \
+                   --volume /var/run/docker.sock:/var/run/docker.sock \
+                   "registry.gitlab.com/gitlab-org/security-products/dependency-scanning:$SP_VERSION" /code
+        ;;
+      *)
+        echo "GitLab EE is required"
+        ;;
+    esac
+  }
+
+  function sast() {
+    case "$CI_SERVER_VERSION" in
+      *-ee)
+
+        # Deprecation notice for CONFIDENCE_LEVEL variable
+        if [ -z "$SAST_CONFIDENCE_LEVEL" -a "$CONFIDENCE_LEVEL" ]; then
+          SAST_CONFIDENCE_LEVEL="$CONFIDENCE_LEVEL"
+          echo "WARNING: CONFIDENCE_LEVEL is deprecated and MUST be replaced with SAST_CONFIDENCE_LEVEL"
+        fi
+
+        docker run --env SAST_CONFIDENCE_LEVEL="${SAST_CONFIDENCE_LEVEL:-3}" \
+                   --volume "$PWD:/public" \
+                   --volume /var/run/docker.sock:/var/run/docker.sock \
+                   "registry.gitlab.com/gitlab-org/security-products/sast:$SP_VERSION" /app/bin/run /public
+        ;;
+      *)
+        echo "GitLab EE is required"
+        ;;
+    esac
+  }
+
+  ######################################################################
+  ######################################################################
+  ########      DEPLOY FUNCTIONS
+  ######################################################################
+  ######################################################################
+  function download_chart() {
+    if [[ ! -d chart ]]; then
+      auto_chart="./environments/helm/$CHART_NAME"
+      auto_chart_name="$CHART_NAME"
+    else
+      auto_chart="chart"
+      auto_chart_name="chart"
+    fi
+
+    helm init --client-only
+    helm repo add gitlab https://charts.gitlab.io
+    if [[ ! -d "$auto_chart" ]]; then
+      helm fetch ${auto_chart} --untar
+    fi
+    if [ "$auto_chart_name" != "chart" ]; then
+      mv ${auto_chart} chart
+      auto_chart="chart"
+      auto_chart_name="chart"
+    fi
+
+    helm dependency update chart/
+    helm dependency build chart/
+  }
+
+  function ensure_namespace() {
+    kubectl describe namespace "$KUBE_NAMESPACE" || kubectl create namespace "$KUBE_NAMESPACE"
+  }
+
+  function check_kube_domain() {
+    if [ -z ${AUTO_DEVOPS_DOMAIN+x} ]; then
+      echo "In order to deploy or use Review Apps, AUTO_DEVOPS_DOMAIN variable must be set"
+      echo "You can do it in Auto DevOps project settings or defining a variable at group or project level"
+      echo "You can also manually add it in .gitlab-ci.yml"
+      false
+    else
+      true
+    fi
+  }
+
+  function initialize_tiller() {
+    echo "Checking Tiller..."
+
+    export HELM_HOST="localhost:44134"
+    tiller -listen ${HELM_HOST} -alsologtostderr > /dev/null 2>&1 &
+    echo "Tiller is listening on ${HELM_HOST}"
+
+    if ! helm version --debug; then
+      echo "Failed to init Tiller."
+      return 1
+    fi
+    echo ""
+  }
+
+  function create_secret() {
+    echo "Create secret..."
+    if [[ "$CI_PROJECT_VISIBILITY" == "public" ]]; then
+      echo "Project is public, no need to create a secret"
+      return
+    fi
+
+    echo "Creating a secret using kubectl command"
+    kubectl create secret -n "$KUBE_NAMESPACE" \
+      docker-registry gitlab-registry \
+      --docker-server="$CI_REGISTRY" \
+      --docker-username="${CI_DEPLOY_USER:-$CI_REGISTRY_USER}" \
+      --docker-password="${CI_DEPLOY_PASSWORD:-$CI_REGISTRY_PASSWORD}" \
+      --docker-email="$GITLAB_USER_EMAIL" \
+      -o yaml --dry-run | kubectl replace -n "$KUBE_NAMESPACE" --force -f -
+  }
+
+  function persist_environment_url() {
+      echo $CI_ENVIRONMENT_URL > environment_url.txt
+  }
+
+  function get_replicas() {
+    track="${1:-stable}"
+    percentage="${2:-100}"
+
+    env_track=$( echo $track | tr -s  '[:lower:]'  '[:upper:]' )
+    env_slug=$( echo ${CI_ENVIRONMENT_SLUG//-/_} | tr -s  '[:lower:]'  '[:upper:]' )
+
+    if [[ "$track" == "stable" ]] || [[ "$track" == "rollout" ]]; then
+      # for stable track get number of replicas from `PRODUCTION_REPLICAS`
+      eval new_replicas=\$${env_slug}_REPLICAS
+      if [[ -z "$new_replicas" ]]; then
+        # If no number for environment, default is existing value
+        new_replicas=$REPLICAS
+      fi
+    else
+      # for all tracks get number of replicas from `CANARY_PRODUCTION_REPLICAS`
+      eval new_replicas=\$${env_track}_${env_slug}_REPLICAS
+      if [[ -z "$new_replicas" ]]; then
+        eval new_replicas=\${env_track}_REPLICAS
+      fi
+    fi
+
+    replicas="${new_replicas:-1}"
+    replicas="$(($replicas * $percentage / 100))"
+
+    # always return at least one replicas
+    if [[ $replicas -gt 0 ]]; then
+      echo "$replicas"
+    else
+      echo 1
+    fi
+  }
+
+  function deploy() {
+    track="${1-stable}"
+    percentage="${2:-100}"
+    name=$(echo "$ENV_NAME" | tr '[:upper:]' '[:lower:]')
+
+    echo "name=$name"
+
+    replicas="1"
+    service_enabled="true"
+
+    # if track is different than stable,
+    # re-use all attached resources
+    if [[ "$track" != "stable" ]]; then
+      echo "This is not yet a stable release"
+      name="$name-$track"
+      service_enabled="false"
+    fi
+
+    replicas=$(get_replicas "$track" "$percentage")
+
+    if [[ "$CI_PROJECT_VISIBILITY" != "public" ]]; then
+      secret_name='gitlab-registry'
+    else
+      secret_name=''
+    fi
+
+    if [[ -z "$(helm ls -q "^$name$")" ]]; then
+      echo "Deploying first release"
+      echo helm upgrade --install \
+        --wait \
+        --set service.enabled="$service_enabled" \
+        --set releaseOverride="$CI_ENVIRONMENT_SLUG" \
+        --set defaultBackend.name="$APP_NAME" \
+        --set defaultBackend.image.repository="$CI_APPLICATION_REPOSITORY" \
+        --set defaultBackend.image.tag="$CI_APPLICATION_TAG" \
+        --set defaultBackend.image.pullPolicy=Always \
+        --set defaultBackend.replicaCount="$replicas" \
+        --set imagePullSecrets[0].name="$secret_name" \
+        --set application.track="$track" \
+        --set service.url="$CI_ENVIRONMENT_URL" \
+        --namespace="$KUBE_NAMESPACE" \
+        "$name" \
+        chart/
+      helm upgrade --install \
+        --wait \
+        --set service.enabled="$service_enabled" \
+        --set releaseOverride="$CI_ENVIRONMENT_SLUG" \
+        --set defaultBackend.name="$APP_NAME" \
+        --set defaultBackend.image.repository="$CI_APPLICATION_REPOSITORY" \
+        --set defaultBackend.image.tag="$CI_APPLICATION_TAG" \
+        --set defaultBackend.image.pullPolicy=Always \
+        --set defaultBackend.replicaCount="$replicas" \
+        --set imagePullSecrets[0].name="$secret_name" \
+        --set application.track="$track" \
+        --set service.url="$CI_ENVIRONMENT_URL" \
+        --namespace="$KUBE_NAMESPACE" \
+        "$name" \
+        chart/
+    else
+      echo "Deploying new release..."
+      echo helm upgrade --install \
+        --wait \
+        --set service.enabled="$service_enabled" \
+        --set releaseOverride="$CI_ENVIRONMENT_SLUG" \
+        --set defaultBackend.name="$APP_NAME" \
+        --set defaultBackend.image.repository="$CI_APPLICATION_REPOSITORY" \
+        --set defaultBackend.image.tag="$CI_APPLICATION_TAG" \
+        --set defaultBackend.image.pullPolicy=Always \
+        --set defaultBackend.replicaCount="$replicas" \
+        --set imagePullSecrets[0].name="$secret_name" \
+        --set application.track="$track" \
+        --set service.url="$CI_ENVIRONMENT_URL" \
+        --namespace="$KUBE_NAMESPACE" \
+        "$name" \
+        chart/
+      helm upgrade --install \
+        --wait \
+        --set service.enabled="$service_enabled" \
+        --set releaseOverride="$CI_ENVIRONMENT_SLUG" \
+        --set defaultBackend.name="$APP_NAME" \
+        --set defaultBackend.image.repository="$CI_APPLICATION_REPOSITORY" \
+        --set defaultBackend.image.tag="$CI_APPLICATION_TAG" \
+        --set defaultBackend.image.pullPolicy=Always \
+        --set defaultBackend.replicaCount="$replicas" \
+        --set imagePullSecrets[0].name="$secret_name" \
+        --set application.track="$track" \
+        --set service.url="$CI_ENVIRONMENT_URL" \
+        --namespace="$KUBE_NAMESPACE" \
+        "$name" \
+        chart/
+    fi
+
+    # wait 5s before testing deployment status
+    sleep 5
+    kubectl rollout status -n "$KUBE_NAMESPACE" -w "deployment/$name-$CHART_NAME-$APP_NAME"
+  }
+
+  function scale() {
+    track="${1-stable}"
+    percentage="${2-100}"
+    name="$CI_ENVIRONMENT_SLUG"
+
+    if [[ "$track" != "stable" ]]; then
+      name="$name-$track"
+    fi
+
+    replicas=$(get_replicas "$track" "$percentage")
+
+    if [[ -n "$(helm ls -q "^$name$")" ]]; then
+      helm upgrade --reuse-values \
+        --wait \
+        --set replicaCount="$replicas" \
+        --namespace="$KUBE_NAMESPACE" \
+        "$name" \
+        chart/
+    fi
+  }
+
+  function install_dependencies() {
+    apk add -U openssl curl tar gzip bash ca-certificates git
+    curl -L -o /etc/apk/keys/sgerrand.rsa.pub https://alpine-pkgs.sgerrand.com/sgerrand.rsa.pub
+    curl -L -O https://github.com/sgerrand/alpine-pkg-glibc/releases/download/2.28-r0/glibc-2.28-r0.apk
+    apk add glibc-2.28-r0.apk
+    rm glibc-2.28-r0.apk
+
+    curl "https://kubernetes-helm.storage.googleapis.com/helm-v${HELM_VERSION}-linux-amd64.tar.gz" | tar zx
+    mv linux-amd64/helm /usr/bin/
+    mv linux-amd64/tiller /usr/bin/
+    helm version --client
+    tiller -version
+
+    curl -L -o /usr/bin/kubectl "https://storage.googleapis.com/kubernetes-release/release/v${KUBERNETES_VERSION}/bin/linux/amd64/kubectl"
+    chmod +x /usr/bin/kubectl
+    kubectl version --client
+  }
+
+
+  function delete() {
+    track="${1-stable}"
+    name="$CI_ENVIRONMENT_SLUG"
+
+    if [[ "$track" != "stable" ]]; then
+      name="$name-$track"
+    fi
+
+    if [[ -n "$(helm ls -q "^$name$")" ]]; then
+      helm delete --purge "$name"
+    fi
+  }
+
+  ######################################################################
+  ######################################################################
+  ########      TEST FUNCTIONS
+  ######################################################################
+  ######################################################################
+  function performance() {
+    export CI_ENVIRONMENT_URL=$(cat environment_url.txt)
+
+    mkdir gitlab-exporter
+    wget -O gitlab-exporter/index.js https://gitlab.com/gitlab-org/gl-performance/raw/10-5/index.js
+
+    mkdir sitespeed-results
+
+    if [ -f .gitlab-urls.txt ]
+    then
+      sed -i -e 's@^@'"$CI_ENVIRONMENT_URL"'@' .gitlab-urls.txt
+      docker run --shm-size=1g --rm -v "$(pwd)":/sitespeed.io sitespeedio/sitespeed.io:6.3.1 --plugins.add ./gitlab-exporter --outputFolder sitespeed-results .gitlab-urls.txt
+    else
+      docker run --shm-size=1g --rm -v "$(pwd)":/sitespeed.io sitespeedio/sitespeed.io:6.3.1 --plugins.add ./gitlab-exporter --outputFolder sitespeed-results "$CI_ENVIRONMENT_URL"
+    fi
+
+    mv sitespeed-results/data/performance.json performance.json
+  }
+
+before_script:
+  - *cd_functions
