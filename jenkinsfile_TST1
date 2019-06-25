@@ -1,15 +1,15 @@
 pipeline {
 
     environment {
-        APP_NAME = "WEBPORTAL2"
+        APP_NAME = "LocalWebHost"
         ENV_NAME = "TST1"
         CONFIG_DIR = "./config"
         WWW_SOURCE_DIR = "./public/*"
         WWW_TARGET_DIR = "/var/www/webPortal2"
         SWEAGLE_SCRIPTS_DIR = "./scripts"
         SWEAGLE_PATH = "<PATH IN DATA MODEL WHERE YOU WANT TO PUT YOUR CONFIG DATA>"
-        SWEAGLE_MDS = "$APP_NAME-$ENV_NAME"
-        SWEAGLE_VALIDATORS = "colorValidator sameListValidator"
+        SWEAGLE_MDS = "Jenkins"
+        SWEAGLE_VALIDATORS = "NoHTTP DebugKeyFinder"
         SWEAGLE_EXPORTER = "<EXPORTER USED TO RETRIEVE YOUR CONFIG>"
         SWEAGLE_EXPORTER_ARGS = "<OPTIONAL, EXPORTER ARGUMENTS IF ANY, SEPARATED BY COMMA>"
         SWEAGLE_EXPORTER_FORMAT = "<OPTIONAL, FORMAT USED FOR DOWNLOADED CONFIG: PROPS (DEFAULT), YAML, JSON, XML>"
@@ -36,7 +36,7 @@ pipeline {
                 sh 'chmod +x $SWEAGLE_SCRIPTS_DIR/*.sh'
                 //sh '$SWEAGLE_SCRIPTS_DIR/webPortalCheckColor.sh $SWEAGLE_MDS'
                 //sh '$SWEAGLE_SCRIPTS_DIR/webPortalCheckList.sh $SWEAGLE_MDS'
-                sh '$SWEAGLE_SCRIPTS_DIR/checkAllConfigByMdsValidator.sh $SWEAGLE_MDS $SWEAGLE_VALIDATORS'
+                //sh '$SWEAGLE_SCRIPTS_DIR/checkAllConfigByMdsValidator.sh $SWEAGLE_MDS $SWEAGLE_VALIDATORS'
                 // Take config snapshot if no errors
                 sh '$SWEAGLE_SCRIPTS_DIR/storeConfigSnapshotByMds.sh $SWEAGLE_MDS'
             }
