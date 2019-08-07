@@ -3,7 +3,7 @@ pipeline {
   stages {
     stage('uploadConfig') {
       steps {
-        SWEAGLEUpload(actionName: 'uploadConfig', fileLocation: 'InfraDB', format: 'json', nodePath: 'MyNodePath', allowDelete: true, markFailed: true, tag: '{BUILD_ID}', description: 'ConfigUpload', showResults: true, withSnapshot: true, onlyParent: true)
+        SWEAGLEUpload(actionName: 'uploadConfig', fileLocation: 'Documents/GitHub/LocalWebHost/', format: 'json', nodePath: 'MyNodePath', allowDelete: true, markFailed: true, tag: '{BUILD_ID}', description: 'ConfigUpload', showResults: true, withSnapshot: true, onlyParent: true)
       }
     }
     stage('Validate') {
