@@ -35,7 +35,7 @@
 			"provider": "EC2",
 			"version": "2.0",
 			"image": "ami-014da868",
-			"host": "Dev-lv-2",
+			"host": "Dev-lv-3",
 			"size": "189",
 			"zone": "Dev",
 			"user": "test",
