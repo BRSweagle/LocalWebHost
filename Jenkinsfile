@@ -19,7 +19,7 @@ pipeline {
       parallel {
         stage('Test') {
           steps {
-            timestamps()
+            echo 'Automated Test Start'
           }
         }
         stage('Validate Config') {
