@@ -10,7 +10,7 @@ pipeline {
         }
         stage('Upload Config') {
           steps {
-            SWEAGLEUpload(actionName: 'uploadConfig', fileLocation: '/Users/boondock/.jenkins/workspace/LocalWebHost_master/InfraDB.json', format: 'json', nodePath: 'MyNodePath', allowDelete: true, tag: 'BUILD_ID', description: 'DataUpload', withSnapshot: true, markFailed: true, showResults: true, onlyParent: true)
+            SWEAGLEUpload(actionName: 'uploadConfig', fileLocation: '/Users/boondock/.jenkins/workspace/LocalWebHost_master/InfraDB.json', format: 'json', nodePath: 'MyNodePath', allowDelete: true, tag: 'Version_${BUILD_ID}', description: 'DataUpload', withSnapshot: true, markFailed: true, showResults: true, onlyParent: true)
           }
         }
       }
