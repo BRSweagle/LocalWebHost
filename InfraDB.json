@@ -1,6 +1,6 @@
 {
 	"name": "Database Cluster",
-	"version": "1.5",
+	"version": "1.6",
 	"description": "A full, master DB and master slave deployment",
 	"environment": "PRD",
 	"Database Cluster": {
@@ -17,7 +17,7 @@
 			"region": "us-east-1"
 		},
 		"SLVDB": {
-			"name": "Slave DB",
+			"name": "Slave DB1",
 			"description": "This node will host the Slave DB",
 			"provider": "Rackspace",
 			"version": "1.2",
