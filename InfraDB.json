@@ -17,7 +17,7 @@
 			"region": "us-east-1"
 		},
 		"SLVDB": {
-			"name": "Slave DB1",
+			"name": "Slave DB2",
 			"description": "This node will host the Slave DB",
 			"provider": "Rackspace",
 			"version": "1.2",
