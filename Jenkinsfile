@@ -23,7 +23,7 @@ pipeline {
                 
                 SWEAGLEUpload(
                 actionName: 'Upload Config Files', 
-                fileLocation: "WebContent/META-INF/my.cnf", 
+                fileLocation: "/Users/boondock/Documents/GitHub/LocalWebHost/config", 
                 format: 'INI', 
                 markFailed: false, 
                 nodePath: 'infra,db023,mycnf', 
@@ -57,7 +57,7 @@ pipeline {
                 steps {
                     SWEAGLEValidate(
                     actionName: 'Validate Config Files',
-                    mdsName: 'TradeMax-PRD',
+                    mdsName: 'jenkinsConf',
                     warnMax: -1,
                     errMax: 0,
                     markFailed: true,
@@ -66,16 +66,12 @@ pipeline {
                     retryInterval: 30)
                     }
             	}	
-            
-            
-       
-                
-            
+   
         stage('Snapshot Config') {
             steps {
               SWEAGLESnapshot(
-              actionName: 'Validated Snapshot TradeMax-PRD',
-              mdsName: 'TradeMax-PRD',
+              actionName: 'Validated Snapshot jenkinsConf',
+              mdsName: 'jenkinsConf',
               description: "Validated Snapshot for Jenkins Build ${BUILD_ID}",
               tag: "Version:1.7.${BUILD_ID}",
               markFailed: false,
@@ -88,8 +84,8 @@ pipeline {
         stage('Export Config') {
             steps {
               SWEAGLEExport(
-              actionName: 'Export TradeMax-PRD settings.json',
-              mdsName: 'TradeMax-PRD',
+              actionName: 'Export jenkinsConf settings.json',
+              mdsName: 'jenkinsConf',
               exporter: 'retrieveAllDataFromNode',
               args: "mycnf",
               format: 'json',
