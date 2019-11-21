@@ -7,60 +7,155 @@ pipeline {
         sleep 2
       }
     }
+    
+      stage ('Validation'){
+                                 
+        parallel {
+        
+        stage ('Config'){
+		stages ('Sweagle Steps'){
+		           
+		       
 
-    stage('Config') {
-      parallel {
-        stage('Config') {
-          steps {
-            echo 'Start Config Upload'
-          }
+        stage('UploadConfig'){
+        
+            steps {
+                
+                SWEAGLEUpload(
+                actionName: 'Upload Config Files', 
+                fileLocation: "WebContent/META-INF/my.cnf", 
+                format: 'INI', 
+                markFailed: false, 
+                nodePath: 'infra,db023,mycnf', 
+                onlyParent: false, 
+                showResults: false,
+                withSnapshot: false,
+                description: 'Upload MySQL config',
+                tag: '', 
+                autoRecognize: true,
+                allowDelete: false)
+                
+                SWEAGLEUpload(
+                actionName: 'Upload JSON Files', 
+                fileLocation: "*.json", 
+                format: 'json', 
+                markFailed: false, 
+                nodePath: 'Applications,TradeMax,Files', 
+                onlyParent: false, 
+                showResults: false,
+                withSnapshot: false,
+                subDirectories: true,
+                description: 'Upload json files',
+                tag: '', 
+                autoRecognize: false,
+                allowDelete: false)
+
+            }
         }
-
-        stage('ConfigUpload') {
-          steps {
-            SWEAGLEUpload(actionName: 'UploadConfig', fileLocation: '/Users/boondock/Documents/GitHub/LocalWebHost/config/InfraDB.json', format: 'json', nodePath: 'Eldorado,releases,jenkinsConf', filenameNodes: true, tag: 'V1_{BUILD_ID}')
-            sleep 2
-          }
+        
+            stage('Validate Config') {
+                steps {
+                    SWEAGLEValidate(
+                    actionName: 'Validate Config Files',
+                    mdsName: 'TradeMax-PRD',
+                    warnMax: -1,
+                    errMax: 0,
+                    markFailed: true,
+                    showResults: true, 
+                    retryCount: 5,
+                    retryInterval: 30)
+                    }
+            	}	
+            
+            
+       
+                
+            
+        stage('Snapshot Config') {
+            steps {
+              SWEAGLESnapshot(
+              actionName: 'Validated Snapshot TradeMax-PRD',
+              mdsName: 'TradeMax-PRD',
+              description: "Validated Snapshot for Jenkins Build ${BUILD_ID}",
+              tag: "Version:1.7.${BUILD_ID}",
+              markFailed: false,
+              showResults: false)
+              
+              
+            }
         }
-
-      }
+        
+        stage('Export Config') {
+            steps {
+              SWEAGLEExport(
+              actionName: 'Export TradeMax-PRD settings.json',
+              mdsName: 'TradeMax-PRD',
+              exporter: 'retrieveAllDataFromNode',
+              args: "mycnf",
+              format: 'json',
+              fileLocation: "settings.json",
+              markFailed: true,
+              showResults: true)
+              
+              
+            }
+        }
+			}
+			} //Sweagle versioining and validation
+			
+		stage ('Code'){ 
+		stages{
+    			
+			    stage('jUnit Test'){ 
+                steps {echo "Testing..."
+                     }
+                  }
+                  
+                stage('SonarQube'){ 
+                steps {sh 'sonar-scanner 55'
+                     }
+                  }
+                  
+                  }	
+                 
+                  
+        }
+       } //parallel
+    } //Validation Stage
+    
+    
+    stage ('Build'){
+    steps {sleep(time:35,unit:"SECONDS")
+                     }
+    
     }
-
-    stage('Test') {
-      parallel {
-        stage('Testing') {
-          steps {
-            echo 'StartTesting'
-          }
-        }
-
-        stage('Selenium Tests') {
-          steps {
-            echo 'SeleniumTests'
-            sleep 1
-          }
-        }
-
-        stage('Performance Tests') {
-          steps {
-            echo 'Start Blazemeter'
-          }
-        }
-
-        stage('Functional') {
-          steps {
-            echo 'Run Front end scripts'
-          }
-        }
-
-      }
+    
+    stage ('Deployment'){
+    steps {sleep(time:35,unit:"SECONDS")
+                     }
+    
     }
-
-    stage('Deploy') {
-      steps {
-        SWEAGLESnapshot(actionName: 'SnapshotConfig', mdsName: 'jenkinsConf', tag: 'V1.{BUILD_ID}', description: 'Latest Jenkins Conf')
-      }
+    
+    stage (Functional) {
+        parallel {
+       	          			
+			    stage('Selenium API'){ 
+                steps { echo "Selenium API..2..3..4"
+                		sleep(time:25,unit:"SECONDS")
+                		echo "Selenium API..2..3..4"
+                     }
+                  }
+                  
+                stage('Selenium UI'){ 
+                steps {	echo "Selenium UI..2..3..4"
+                		sh 'selenium 35'
+                		echo "Selenium API..2..3..4"
+                     }
+                  }
+                 
     }
-
-  }
-}
+    
+    }//Functional Testing
+    
+ } //Outer Stages
+} //Pipeline
