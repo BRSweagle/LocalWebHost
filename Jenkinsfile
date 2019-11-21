@@ -22,25 +22,11 @@ pipeline {
             steps {
                 
                 SWEAGLEUpload(
-                actionName: 'Upload Config Files', 
-                fileLocation: "/Users/boondock/Documents/GitHub/LocalWebHost/config", 
-                format: 'INI', 
-                markFailed: false, 
-                nodePath: 'infra,db023,mycnf', 
-                onlyParent: false, 
-                showResults: false,
-                withSnapshot: false,
-                description: 'Upload MySQL config',
-                tag: '', 
-                autoRecognize: true,
-                allowDelete: false)
-                
-                SWEAGLEUpload(
                 actionName: 'Upload JSON Files', 
                 fileLocation: "*.json", 
                 format: 'json', 
                 markFailed: false, 
-                nodePath: 'Applications,TradeMax,Files', 
+                nodePath: 'Eldorado,releases,jenkinsConf', 
                 onlyParent: false, 
                 showResults: false,
                 withSnapshot: false,
