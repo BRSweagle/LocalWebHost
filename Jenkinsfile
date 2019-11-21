@@ -44,7 +44,7 @@ pipeline {
                     SWEAGLEValidate(
                     actionName: 'Validate Config Files',
                     mdsName: 'jenkinsConf',
-                    warnMax: -1,
+                    warnMax: 0,
                     errMax: 5,
                     markFailed: true,
                     showResults: true,
@@ -94,7 +94,7 @@ pipeline {
                   }
 
                 stage('SonarQube'){
-                steps {sh 'sonar-scanner 55'
+                steps {echo "scanning..."
                      }
                   }
 
