@@ -3,7 +3,7 @@ pipeline {
   stages {
     stage('build') {
       steps {
-        git(url: 'https://github.com/BRSweagle/LocalWebHost/tree/master/config', poll: true)
+        git(url: 'https://github.com/BRSweagle/LocalWebHost', poll: true)
         sleep 2
       }
     }
