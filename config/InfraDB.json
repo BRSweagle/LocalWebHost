@@ -9,7 +9,7 @@
       "description": "This node will host the Master DB",
       "provider": "Rackspace",
       "version": "1.0",
-      "host": "prd-lv-1",
+      "host": "prd-lv-2",
       "size": "200",
       "min": "105",
       "max": "200",
