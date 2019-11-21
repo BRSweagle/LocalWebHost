@@ -83,7 +83,7 @@ pipeline {
             }
         }
 			}
-			} //Sweagle versioining and validation
+			} //Sweagle versioning and validation
 
 		stage ('Code'){
 		stages{
