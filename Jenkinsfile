@@ -7,52 +7,52 @@ pipeline {
         sleep 2
       }
     }
-    
+
       stage ('Validation'){
-                                 
+
         parallel {
-        
+
         stage ('Config'){
 		stages ('Sweagle Steps'){
-		           
-		       
+
+
 
         stage('UploadConfig'){
-        
+
             steps {
-                
+
                 SWEAGLEUpload(
-                actionName: 'Upload JSON Files', 
-                fileLocation: "*.json", 
-                format: 'json', 
-                markFailed: false, 
-                nodePath: 'Eldorado,releases,jenkinsConf', 
-                onlyParent: false, 
+                actionName: 'Upload JSON Files',
+                fileLocation: "*.json",
+                format: 'json',
+                markFailed: false,
+                nodePath: 'Eldorado,releases,jenkinsConf',
+                onlyParent: false,
                 showResults: false,
                 withSnapshot: false,
                 subDirectories: true,
                 description: 'Upload json files',
-                tag: '', 
+                tag: '',
                 autoRecognize: false,
                 allowDelete: false)
 
             }
         }
-        
+
             stage('Validate Config') {
                 steps {
                     SWEAGLEValidate(
                     actionName: 'Validate Config Files',
                     mdsName: 'jenkinsConf',
                     warnMax: -1,
-                    errMax: 0,
+                    errMax: 5,
                     markFailed: true,
-                    showResults: true, 
+                    showResults: true,
                     retryCount: 5,
                     retryInterval: 30)
                     }
-            	}	
-   
+            	}
+
         stage('Snapshot Config') {
             steps {
               SWEAGLESnapshot(
@@ -62,11 +62,11 @@ pipeline {
               tag: "Version:1.7.${BUILD_ID}",
               markFailed: false,
               showResults: false)
-              
-              
+
+
             }
         }
-        
+
         stage('Export Config') {
             steps {
               SWEAGLEExport(
@@ -78,66 +78,66 @@ pipeline {
               fileLocation: "settings.json",
               markFailed: true,
               showResults: true)
-              
-              
+
+
             }
         }
 			}
 			} //Sweagle versioining and validation
-			
-		stage ('Code'){ 
+
+		stage ('Code'){
 		stages{
-    			
-			    stage('jUnit Test'){ 
+
+			    stage('jUnit Test'){
                 steps {echo "Testing..."
                      }
                   }
-                  
-                stage('SonarQube'){ 
+
+                stage('SonarQube'){
                 steps {sh 'sonar-scanner 55'
                      }
                   }
-                  
-                  }	
-                 
-                  
+
+                  }
+
+
         }
        } //parallel
     } //Validation Stage
-    
-    
+
+
     stage ('Build'){
     steps {sleep(time:35,unit:"SECONDS")
                      }
-    
+
     }
-    
+
     stage ('Deployment'){
     steps {sleep(time:35,unit:"SECONDS")
                      }
-    
+
     }
-    
+
     stage (Functional) {
         parallel {
-       	          			
-			    stage('Selenium API'){ 
+
+			    stage('Selenium API'){
                 steps { echo "Selenium API..2..3..4"
                 		sleep(time:25,unit:"SECONDS")
                 		echo "Selenium API..2..3..4"
                      }
                   }
-                  
-                stage('Selenium UI'){ 
+
+                stage('Selenium UI'){
                 steps {	echo "Selenium UI..2..3..4"
                 		sh 'selenium 35'
                 		echo "Selenium API..2..3..4"
                      }
                   }
-                 
+
     }
-    
+
     }//Functional Testing
-    
+
  } //Outer Stages
 } //Pipeline
