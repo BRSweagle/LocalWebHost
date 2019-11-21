@@ -18,7 +18,7 @@ pipeline {
 
         stage('ConfigUpload') {
           steps {
-            SWEAGLEUpload(actionName: 'UploadConfig', fileLocation: '/Users/boondock/Documents/GitHub/LocalWebHost/config/', format: 'json', nodePath: 'Eldorado,releases,jenkinsConf', filenameNodes: true, tag: 'V1.{BUILD_ID}')
+            SWEAGLEUpload(actionName: 'UploadConfig', fileLocation: '/Users/boondock/Documents/GitHub/LocalWebHost/config/InfraDB.json', format: 'json', nodePath: 'Eldorado,releases,jenkinsConf', filenameNodes: true, tag: 'V1.{BUILD_ID}')
             sleep 2
           }
         }
