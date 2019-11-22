@@ -128,10 +128,12 @@ pipeline {
                      }
                   }
 
-                stage('Selenium UI'){
-                steps {	echo "Selenium UI..2..3..4"}
-                sleep(time:2,unit:"SECONDS")
+                	    stage('Selenium UI'){
+                steps {	echo "Selenium UI..2..3..4"
+                	sleep(time:2,unit:"SECONDS")
+		        echo "Selenium UI..2..3..4"
                   }
+		}
 
     }
 
