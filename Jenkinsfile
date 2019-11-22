@@ -49,7 +49,7 @@ pipeline {
                     markFailed: true,
                     showResults: true,
                     retryCount: 5,
-                    retryInterval: 30)
+                    retryInterval: 5)
                     }
             	}
 
@@ -107,13 +107,13 @@ pipeline {
 
 
     stage ('Build'){
-    steps {sleep(time:35,unit:"SECONDS")
+    steps {sleep(time:5,unit:"SECONDS")
                      }
 
     }
 
     stage ('Deployment'){
-    steps {sleep(time:35,unit:"SECONDS")
+    steps {sleep(time:5,unit:"SECONDS")
                      }
 
     }
@@ -123,13 +123,14 @@ pipeline {
 
 			    stage('Selenium API'){
                 steps { echo "Selenium API..2..3..4"
-                		sleep(time:25,unit:"SECONDS")
+                		sleep(time:2,unit:"SECONDS")
                 		echo "Selenium API..2..3..4"
                      }
                   }
 
                 stage('Selenium UI'){
                 steps {	echo "Selenium UI..2..3..4"}
+                sleep(time:2,unit:"SECONDS")
                   }
 
     }
