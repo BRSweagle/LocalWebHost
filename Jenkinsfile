@@ -129,9 +129,7 @@ pipeline {
                   }
 
                 stage('Selenium UI'){
-                steps {	echo "Selenium UI..2..3..4"
-                		echo "Selenium API..2..3..4"
-                     }
+                steps {	echo "Selenium UI..2..3..4"}
                   }
 
     }
