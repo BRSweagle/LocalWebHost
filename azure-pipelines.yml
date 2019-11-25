@@ -6,14 +6,23 @@
 trigger:
 - master
 
-pool:
-  vmImage: 'ubuntu-latest'
-
-steps:
-- script: echo Hello, world!
-  displayName: 'Run a one-line script'
-
-- script: |
-    echo Add other tasks to build, test, and deploy your project.
-    echo See https://aka.ms/yaml
-  displayName: 'Run a multi-line script'
+- task: InvokeRESTAPI@1
+  inputs:
+    connectionType: 'connectedServiceName'
+    method: 'GET'
+    headers: |
+      {
+      "Content-Type":"application/json", 
+      "PlanUrl": "$(system.CollectionUri)", 
+      "ProjectId": "$(system.TeamProjectId)", 
+      "HubName": "$(system.HostType)", 
+      "PlanId": "$(system.PlanId)", 
+      "JobId": "$(system.JobId)", 
+      "TimelineId": "$(system.TimelineId)", 
+      "TaskInstanceId": "$(system.TaskInstanceId)", 
+      "AuthToken": "$(system.AccessToken)"
+      }
+      
+      curl -X POST \
+      https://testing.sweagle.com/api/v1/tenant/metadata-parser/parse -H "Authorization: bearer f799d9d3-4624-40dc-85ea-10ec16100d16" -d "mds=release1.0&parser=all&args=&mdsArgs=&format=JSON&tag=&mdsTags="
+    waitForCompletion: 'false'
