@@ -9,5 +9,23 @@
   pool:
     vmImage: 'Ubuntu-16.04'
 
-  steps:
-  -   bash: echo "Hello world"
+stages:
+- stage: Test
+- task: CmdLine@2
+  inputs:
+    script: |
+      echo Write your commands here
+      
+      echo Hello world
+    workingDirectory: '/Users/boondock/Documents/Technical'
+
+- stage: DeployUS1
+  dependsOn: Test    # this stage runs after Test
+
+- stage: DeployUS2
+  dependsOn: Test    # this stage runs in parallel with DeployUS1, after Test
+
+- stage: DeployEurope
+  dependsOn:         # this stage runs after DeployUS1 and DeployUS2
+  - DeployUS1
+  - DeployUS2
