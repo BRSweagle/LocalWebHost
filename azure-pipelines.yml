@@ -16,5 +16,4 @@
       # Write your PowerShell commands here.
 
       cd /Users/boondock/Documents/Technical
-    curl -X POST \
-    https://testing.sweagle.com/api/v1/tenant/metadata-parser/parse -H "Authorization: bearer 783d4f5b-c260-4cce-936e-00d2483875ab" -d "mds=release1.0&parser=all&args=&mdsArgs=&format=JSON&tag=V.2.1.3&mdsTags="
+      print **done**
