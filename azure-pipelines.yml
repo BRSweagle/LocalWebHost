@@ -16,4 +16,4 @@
       # Write your PowerShell commands here.
 
       cd /Users/boondock/Documents/Technical
-      print **done**
+      echo 'test'
