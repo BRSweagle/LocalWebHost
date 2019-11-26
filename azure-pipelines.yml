@@ -9,11 +9,5 @@
   pool:
     vmImage: 'Ubuntu-16.04'
 
-- task: PowerShell@2
-  inputs:
-    targetType: 'inline'
-    script: |
-      # Write your PowerShell commands here.
-
-      cd /Users/boondock/Documents/Technical
-      echo 'test'
+  steps:
+  -   bash: echo "Hello world"
