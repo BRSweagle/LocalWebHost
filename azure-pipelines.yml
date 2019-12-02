@@ -7,7 +7,7 @@
   - master
 
   pool:
-     vmImage: 'ubuntu-latest'
+     vmImage: 'windows-latest'
 
 # Bash
 # Run a Bash script on macOS, Linux, or Windows
