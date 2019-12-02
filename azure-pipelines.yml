@@ -19,3 +19,4 @@
       script: echo $MYSECRET
     env:
       MySecret: $(Foo)
+
