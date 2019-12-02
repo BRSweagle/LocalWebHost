@@ -7,7 +7,7 @@
   - master
 
   pool:
-     vmImage: 'abuntu-latest'
+     vmImage: 'Ubuntu-16.04'
 
 # Bash
 # Run a Bash script on macOS, Linux, or Windows
