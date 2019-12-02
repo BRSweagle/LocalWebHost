@@ -9,13 +9,13 @@
   pool:
     vmImage: 'Ubuntu-16.04'
 
-  stages:
-   stage: Test
+# Bash
+# Run a Bash script on macOS, Linux, or Windows
 
-  task: CmdLine@2
-  inputs:
-    script: |
-      echo Write your commands here
-      
-      echo Hello world
-    workingDirectory: '/Users/boondock/Documents/Technical'
+  steps:
+  - task: Bash@3
+    inputs:
+      targetType: 'inline'
+      script: echo $MYSECRET
+    env:
+      MySecret: $(Foo)
