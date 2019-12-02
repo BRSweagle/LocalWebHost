@@ -7,7 +7,7 @@
   - master
 
   pool:
-     vmImage: 'windows-latest'
+     vmImage: 'abuntu-latest'
 
 # Bash
 # Run a Bash script on macOS, Linux, or Windows
@@ -25,3 +25,10 @@
       targetType: 'inline'
       script: |
        curl -X POST \ "https://testing.sweagle.com/api/v1/tenant/metadata-parser/parse" -H "Authorization: bearer c1275a8c-ed45-4dbe-a7d4-e030dbe429db" -d "mds=jenkinsConf&parser=all&args=&mdsArgs=&format=CSV&tag=Version:1.7.18&mdsTags="
+
+  - task: PublishCodeCoverageResults@1
+    inputs:
+     codeCoverageTool: "JaCoCo"
+     summaryFileLocation: "$(System.DefaultWorkingDirectory)/**/site/jacoco/jacoco.xml"
+     reportDirectory: "$(System.DefaultWorkingDirectory)/**/site/jacoco"
+     failIfCoverageEmpty: true
