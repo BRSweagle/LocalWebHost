@@ -24,4 +24,4 @@
     inputs:
       targetType: 'inline'
       script: |
-       curl -X POST \ https://testing.sweagle.com/api/v1/tenant/metadata-parser/parse -H "Authorization: bearer c1275a8c-ed45-4dbe-a7d4-e030dbe429db" -d "mds=jenkinsConf&parser=all&args=&mdsArgs=&format=CSV&tag=Version:1.7.18&mdsTags="
+       curl -X POST \ "https://testing.sweagle.com/api/v1/tenant/metadata-parser/parse" -H "Authorization: bearer c1275a8c-ed45-4dbe-a7d4-e030dbe429db" -d "mds=jenkinsConf&parser=all&args=&mdsArgs=&format=CSV&tag=Version:1.7.18&mdsTags="
