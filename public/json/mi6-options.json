@@ -1,5 +1,5 @@
 {
-  "focus": false,
+  "focus": true,
   "type": "object",
   "helpers": [],
   "helpersPosition": "below",
@@ -45,7 +45,7 @@
           "fieldClass": "",
           "hideInitValidationError": false,
           "optionLabels": [],
-          "placeholder": "james.bond@MI6.com",
+          "placeholder": "ben.riley@MI6.com",
           "typeahead": {},
           "allowOptionalEmpty": "true",
           "data": {},
