@@ -24,7 +24,7 @@
     inputs:
       targetType: 'inline'
       script: |
-       curl -X POST \ "https://testing.sweagle.com/api/v1/tenant/metadata-parser/parse" -H "Authorization: bearer c1275a8c-ed45-4dbe-a7d4-e030dbe429db" -d "mds=jenkinsConf&parser=all&args=&mdsArgs=&format=CSV&tag=Version:1.7.18&mdsTags="
+        curl -s -X POST -H "Authorization: bearer 783d4f5b-c260-4cce-936e-00d2483875ab" 'https://testing.sweagle.com/api/v1/data/bulk-operations/dataLoader/upload?nodePath=Eldorado,releases,pipeline,goCD&format=json&tag=V1.2&allowDelete=false&autoApprove=true&storeSnapshotResults=true&validationLevel=error' -H 'Content-Type: application/json' -d '{"nodeFlavor":"chocolate"}'
 
   - task: PublishCodeCoverageResults@1
     inputs:
