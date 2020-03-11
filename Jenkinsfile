@@ -26,7 +26,7 @@ pipeline {
                 fileLocation: "*.json",
                 format: 'json',
                 markFailed: false,
-                nodePath: 'Eldorado,releases,jenkinsConf',
+                nodePath: 'Eldorado,releases,jenkinsConf1',
                 onlyParent: false,
                 showResults: false,
                 withSnapshot: false,
