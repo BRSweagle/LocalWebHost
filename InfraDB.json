@@ -1,47 +1,46 @@
 {
-	"name": "Database Cluster",
-	"version": "1.6",
-	"description": "A full, master DB and master slave deployment",
-	"environment": "PRD",
-	"Database Cluster": {
-		"MASDB": {
-			"name": "Master DB",
-			"description": "This node will host the Master DB",
-			"provider": "Rackspace",
-			"version": "1.1",
-			"host": "prd-lv-2",
-			"size": "300",
-			"zone": "prd",
-			"user": "admin",
-			"pass": "dn22&^%yh",
-			"region": "us-east-1"
-		},
-		"SLVDB": {
-			"name": "Slave DB2",
-			"description": "This node will host the Slave DB",
-			"provider": "Rackspace",
-			"version": "1.3",
-			"image": "50",
-			"host": "prd-lv-3",
-			"size": "190",
-			"zone": "prd",
-			"user": "test",
-			"pass": "dn22&^%ys",
-			"region": "us-west-1"
-		},
-		"TSTDB": {
-			"name": "TST DB",
-			"description": "The testing database host",
-			"provider": "EC2",
-			"version": "2.0",
-			"image": "ami-014da868",
-			"host": "Dev-lv-3",
-			"size": "189",
-			"zone": "Dev",
-			"user": "test",
-			"pass": "dn12&^%ys",
-			"region": "us-dev-1"
-		}
-	}
-
+  "name": "Database Cluster",
+  "version": "1.7",
+  "description": "A full, master DB and master slave deployment",
+  "environment": "PRD",
+  "Database Cluster": {
+    "MASDB": {
+      "name": "Master DB",
+      "description": "This node will host the Master DB",
+      "provider": "Rackspace",
+      "version": "1.1",
+      "host": "prd-lv-2",
+      "size": "300",
+      "zone": "prd",
+      "user": "admin",
+      "pass": "dn22&^%yh",
+      "region": "us-east-1"
+    },
+    "SLVDB": {
+      "name": "Slave DB2",
+      "description": "This node will host the Slave DB",
+      "provider": "Rackspace",
+      "version": "1.3",
+      "image": "50",
+      "host": "prd-lv-3",
+      "size": "190",
+      "zone": "prd",
+      "user": "test",
+      "pass": "dn22&^%ys",
+      "region": "us-west-1"
+    },
+    "TSTDB": {
+      "name": "TST DB",
+      "description": "The testing database host",
+      "provider": "EC2",
+      "version": "2.0",
+      "image": "ami-014da868",
+      "host": "Dev-lv-3",
+      "size": "189",
+      "zone": "Dev",
+      "user": "test",
+      "pass": "dn12&^%ys",
+      "region": "us-dev-1"
+    }
+  }
 }
